@@ -1,0 +1,43 @@
+# .bashrc
+
+# Source global definitions
+if [ -f /etc/bashrc ]; then
+	. /etc/bashrc
+fi
+
+HISTSIZE=5000
+HISTFILESIZE=10000
+
+# Uncomment the following line if you don't like systemctl's auto-paging feature:
+# export SYSTEMD_PAGER=
+
+# User specific aliases and functions
+# alias rm='rm -i'
+# alias cp='cp -i'
+# alias mv='mv -i'
+alias ll='ls -l --color=auto'
+alias ls='ls --color=auto'
+# ==================================
+
+# Setup colored hint
+case "$TERM" in
+xterm*|rxvt*|linux)
+# Command prompt
+_COLOR_TEXT='\[\e[32m\]'
+_COLOR_TEXT_ALT='\[\e[36m\]'
+_COLOR_SPLITTER='\[\e[33m\]'
+_END_SYMBOL='$ '
+_PROMPT_END='\[\e[0m\]'
+if [ "0" = "$UID" ]
+then
+_COLOR_TEXT='\[\e[31m\]'
+_END_SYMBOL='# '
+fi
+_FIRST_LINE=$_COLOR_TEXT'\u'$_COLOR_SPLITTER'@'$_COLOR_TEXT'\h'.cloud$_COLOR_SPLITTER':\w'$_PROMPT_END
+_SECOND_LINE=$_COLOR_TEXT_ALT$_END_SYMBOL$_PROMPT_END
+export PS1=$_FIRST_LINE'\n'$_SECOND_LINE
+unset _COLOR_TEXT _COLOR_TEXT_ALT _COLOR_SPLITTER _END_SYMBOL _PROMPT_END _FIRST_LINE _SECOND_LINE
+    ;;
+*)
+    ;;
+esac

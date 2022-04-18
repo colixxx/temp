@@ -1,0 +1,29 @@
+---
+- name: Adding secondary groups
+  group:
+    name: "{{ item }}"
+    state: present
+  when: groups_for_create is defined
+  with_items: "{{ groups_for_create | json_query('[*].group') }}"
+
+- name: Configure admins
+  include_tasks: manage_admins.yml
+  with_items:
+    - "{{ admins }}"
+
+- name: Configure users
+  include_tasks: manage_user.yml
+  when: groups_for_create is defined
+  with_subelements:
+    - "{{ groups_for_create }}"
+    - users
+
+- name: Configure privileges
+  include_tasks: manage_privileges.yml
+  when: groups_for_create is defined
+  with_subelements:
+    - "{{ groups_for_create }}"
+    - users
+
+- name: Remove users
+  include_tasks: remove.yml

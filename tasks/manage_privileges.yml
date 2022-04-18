@@ -1,0 +1,28 @@
+- name: "Check that {{ role_path }}/templates/users/{{ item.1 }}.j2 is exist"
+  local_action: "stat path={{ role_path }}/templates/users/{{ item.1 }}.j2"
+  register: user_config_exist
+
+- name: "Configure user privileges for {{ item.1 }}"
+  ansible.builtin.template:
+    src: "templates/users/{{ item.1 }}.j2"
+    dest: /etc/sudoers.d/{{ item.1 }}
+    owner: root
+    group: root
+    mode: '0620'
+    validate: visudo -cf %s
+  when: user_config_exist.stat.exists == true and "lookup('file', 'files/users/' + item.1 + '.yml') | from_yaml | json_query('[*].name') | replace(\"[\",'') | replace(\"]\",'') | replace(\"'\",'')"
+
+- name: "Check that {{ role_path }}/templates/groups/{{ item.0.group }}.j2 is exist"
+  local_action: "stat path={{ role_path }}/templates/groups/{{ item.0.group }}.j2"
+  register: group_config_exist
+
+
+- name: "Configure group privileges for {{ item.0.group }}"
+  ansible.builtin.template:
+    src: "templates/groups/{{ item.0.group }}.j2"
+    dest: /etc/sudoers.d/{{ item.0.group }}
+    owner: root
+    group: root
+    mode: '0620'
+    validate: visudo -cf %s
+  when: group_config_exist.stat.exists == true

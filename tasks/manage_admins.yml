@@ -1,0 +1,54 @@
+- name: Adding admins group
+  group:
+    name: admins
+    state: present
+
+- name: "Adding {{ item }} to admins"
+  user:
+    name: "{{ item }}"
+    groups: admins
+    shell: /bin/bash
+
+- name: "Check that {{ role_path }}/files/users/{{ item }}.yml is exist"
+  local_action: "stat path={{ role_path }}/files/users/{{ item }}.yml"
+  register: user_config_exist
+
+- name: "Set authorized key for {{ item }}"
+  authorized_key:
+    user: "{{ item }}"
+    state: present
+    key: "{{ lookup('file', 'files/users/' + item + '.yml') | from_yaml | json_query('[*].key') | replace(\"[\",'') | replace(\"]\",'') | replace(\"'\",'') }}"
+  when: user_config_exist.stat.exists == true and "lookup('file', 'files/users/' + item + '.yml') | from_yaml | json_query('[*].key') | replace(\"[\",'') | replace(\"]\",'') | replace(\"'\",'')" and not ansible_check_mode
+
+- name: "Configure admin group privileges"
+  ansible.builtin.template:
+    src: "templates/groups/admins.j2"
+    dest: /etc/sudoers.d/admins
+    owner: root
+    group: root
+    mode: '0620'
+    validate: visudo -cf %s
+
+- name: "add line to /etc/profile"
+  lineinfile:
+    path: /etc/profile
+    insertafter: '^unset'
+    line: 'export HISTTIMEFORMAT="%F %T "'
+    state: present
+
+- name: 'create .bashrc for root'
+  template:
+    src: files/bashrc-root
+    dest: /root/.bashrc
+
+- name: "Check that {{ role_path }}/files/home/{{ item }} is exist"
+  local_action: "stat path={{ role_path }}/files/home/{{ item }}"
+  register: user_home_config
+
+- name: "copy files to remote /home/{{ item }}"
+  copy:
+    src: files/home/{{ item }}/
+    dest: /home/{{ item }}/
+    owner: "{{ item }}"
+    group: "{{ item }}"
+  when: user_home_config.stat.exists == true
